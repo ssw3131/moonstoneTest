@@ -18,9 +18,6 @@
         gl_PointSize = 5.0;
         gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
     }
-
-
-
 </script>
 <script id="shader-fs-color" type="x-shader/x-fragment">
     precision mediump float;
@@ -30,9 +27,6 @@
     void main( void ) {
         gl_FragColor = uColor;
     }
-
-
-
 </script>
 <!--shader texture-->
 <script id="shader-vs-texture" type="x-shader/x-vertex">
@@ -48,8 +42,6 @@
         gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
         vTextureCoord = aTextureCoord;
     }
-
-
 </script>
 <script id="shader-fs-texture" type="x-shader/x-fragment">
     precision mediump float;
@@ -61,8 +53,6 @@
     void main(void) {
         gl_FragColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t ) );
     }
-
-
 </script>
 <script>
 Dk.init( function(){
@@ -124,7 +114,7 @@ Dk.init( function(){
 
     //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-    function initShader2(){
+    function initShader(){
         _prgList = {};
 
         // color
@@ -135,74 +125,6 @@ Dk.init( function(){
 
 //        _prg = _prgList.color;
         _prg = _prgList.texture;
-        _gl.useProgram( _prg );
-    }
-
-    function initShader(){
-        _prgList = {};
-
-        var fragSd, verSd, prg, prg2,  i, aArr, aStr, uArr, uStr;
-
-        // color
-        verSd = getShader( "shader-vs-color" );
-        fragSd = getShader( "shader-fs-color" );
-
-        prg = _gl.createProgram();
-        _gl.attachShader( prg, verSd );
-        _gl.attachShader( prg, fragSd );
-        _gl.linkProgram( prg );
-
-        if( !_gl.getProgramParameter( prg, _gl.LINK_STATUS ) )
-            throw new Error( "Could not initialise shaders" );
-
-        aArr = [ "aVertexPosition" ];
-        i = aArr.length;
-        while( i-- ){
-            aStr = aArr[ i ];
-            prg[ aStr ] = _gl.getAttribLocation( prg, aStr );
-            _gl.enableVertexAttribArray( prg[ aStr ] );
-        }
-
-        uArr = [ "uMatrixP", "uMatrixMV", "uColor" ];
-        i = uArr.length;
-        while( i-- ){
-            uStr = uArr[ i ];
-            prg[ uStr ] = _gl.getUniformLocation( prg, uStr );
-        }
-
-        _prgList.color = prg;
-
-        // texture
-        verSd = getShader( "shader-vs-texture" );
-        fragSd = getShader( "shader-fs-texture" );
-
-        prg2 = _gl.createProgram();
-        _gl.attachShader( prg2, verSd );
-        _gl.attachShader( prg2, fragSd );
-        _gl.linkProgram( prg2 );
-
-        if( !_gl.getProgramParameter( prg2, _gl.LINK_STATUS ) )
-            throw new Error( "Could not initialise shaders" );
-
-        aArr = [ "aVertexPosition", "aTextureCoord" ];
-        i = aArr.length;
-        while( i-- ){
-            aStr = aArr[ i ];
-            prg2[ aStr ] = _gl.getAttribLocation( prg2, aStr );
-            _gl.enableVertexAttribArray( prg2[ aStr ] );
-        }
-
-        uArr = [ "uMatrixP", "uMatrixMV", "uSampler" ];
-        i = uArr.length;
-        while( i-- ){
-            uStr = uArr[ i ];
-            prg2[ uStr ] = _gl.getUniformLocation( prg2, uStr );
-        }
-
-        _prgList.texture = prg2;
-
-        _prg = _prgList.color;
-//        _prg = _prgList.texture;
         _gl.useProgram( _prg );
     }
 
@@ -386,11 +308,11 @@ Dk.init( function(){
         _gl.uniform4fv( _prg.uColor, [ 1.0, 0.5, 1.0, 0.5 ] );
 
         // texture
-//        _gl.bindBuffer( _gl.ARRAY_BUFFER, _bfList.box.textureBf );
-//        _gl.vertexAttribPointer( _prg.aTextureCoord, _bfList.box.textureBf.itemSize, _gl.FLOAT, false, 0, 0 );
-//        _gl.activeTexture( _gl.TEXTURE0 );
-//        _gl.bindTexture( _gl.TEXTURE_2D, neheTexture );
-//        _gl.uniform1i( _prg.samplerUniform, 0 );
+        _gl.bindBuffer( _gl.ARRAY_BUFFER, _bfList.box.textureBf );
+        _gl.vertexAttribPointer( _prg.aTextureCoord, _bfList.box.textureBf.itemSize, _gl.FLOAT, false, 0, 0 );
+        _gl.activeTexture( _gl.TEXTURE0 );
+        _gl.bindTexture( _gl.TEXTURE_2D, neheTexture );
+        _gl.uniform1i( _prg.samplerUniform, 0 );
 
         // uMatrixMV
         _gl.uniformMatrix4fv( _prg.uMatrixMV, false, _mtrMV );
