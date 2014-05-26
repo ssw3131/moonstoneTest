@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Lesson 1</title>
+</head>
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+
+
+<!-- 하드웨어 언어 - shader (C언어에 영향을 강하게 받은 특별한 쉐이더 언어)-->
+<!--fragment shader-->
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    void main(void) {
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    }
+
+</script>
+<!--vertex shader-->
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    }
+
+</script>
+
+<script>
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 초기화 함수 - webGL
+
+    var gl;
+    function initGL( canvas ){
+        try {
+            // gl = canvas 요소를 통하여 webGL을 사용하기 위한 컨텍스트
+            gl = canvas.getContext( "experimental-webgl" );
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch( e ) {
+        }
+        if( !gl ){
+            alert( "Could not initialise WebGL, sorry :-(" );
+        }
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 지원함수 - getShader
+    // 인수로 전달된 id와 일치하는 요소를 html에서 찾아 fragment나 vertex shader 타입에 따라 작성하여 컴파일을 걸어놓는 것
+
+    function getShader( gl, id ){
+        var shaderScript = document.getElementById( id );
+        if( !shaderScript ){
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while( k ){
+            if( k.nodeType == 3 ){
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if( shaderScript.type == "x-shader/x-fragment" ){
+            shader = gl.createShader( gl.FRAGMENT_SHADER );
+        } else if( shaderScript.type == "x-shader/x-vertex" ){
+            shader = gl.createShader( gl.VERTEX_SHADER );
+        } else {
+            return null;
+        }
+
+        gl.shaderSource( shader, str );
+        gl.compileShader( shader );
+
+        if( !gl.getShaderParameter( shader, gl.COMPILE_STATUS ) ){
+            alert( gl.getShaderInfoLog( shader ) );
+            return null;
+        }
+
+        return shader;
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 초기화 함수 - shader
+
+    var shaderProgram;
+
+    function initShaders(){
+        // fragment shader
+        var fragmentShader = getShader( gl, "shader-fs" );
+        // vertex shader
+        var vertexShader = getShader( gl, "shader-vs" );
+
+        // gl program에 쉐이더 연결
+        shaderProgram = gl.createProgram();
+        gl.attachShader( shaderProgram, vertexShader );
+        gl.attachShader( shaderProgram, fragmentShader );
+        gl.linkProgram( shaderProgram );
+
+        if( !gl.getProgramParameter( shaderProgram, gl.LINK_STATUS ) ){
+            alert( "Could not initialise shaders" );
+        }
+
+        gl.useProgram( shaderProgram );
+
+        // attribute에 대한 참조 검색
+        // gl.enableVertexAttribArray 함수를 사용하여 WebGL에 배열에서 애트리뷰트 값을 제공하려는 것을 전하고 있다
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation( shaderProgram, "aVertexPosition" );
+        gl.enableVertexAttribArray( shaderProgram.vertexPositionAttribute );
+
+        // program에서 두개의 uniform variable의 location값을 저장
+        shaderProgram.pMatrixUniform = gl.getUniformLocation( shaderProgram, "uPMatrix" );
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation( shaderProgram, "uMVMatrix" );
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 지원함수 - mat4.create
+
+    // model-view matrix
+    var mvMatrix = mat4.create();
+    // projection matrix
+    var pMatrix = mat4.create();
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 지원함수 - setMatrixUniforms
+
+    function setMatrixUniforms(){
+        // uniform 변수를 이용 gl에 js 형식의 매트릭스를 전달
+        gl.uniformMatrix4fv( shaderProgram.pMatrixUniform, false, pMatrix );
+        gl.uniformMatrix4fv( shaderProgram.mvMatrixUniform, false, mvMatrix );
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 버퍼설정
+
+    var triangleVertexPositionBuffer;
+    var squareVertexPositionBuffer;
+
+    function initBuffers(){
+        // 삼각형
+        // 삼각형의 버텍스 좌표 (버퍼는 사실 그래픽카드의 메모리)
+        triangleVertexPositionBuffer = gl.createBuffer();
+
+        // gl에게 실행중인 버퍼에 대한 작업은 모두 인수로 지정된 버퍼에 의해 실행하도록 알림, "current buffer"
+        gl.bindBuffer( gl.ARRAY_BUFFER, triangleVertexPositionBuffer );
+
+        // js 배열로 버텍스 좌표를 정의
+        var vertices = [
+            0.0, 1.0, 0.0,
+            -1.0, -1.0, 0.0,
+            1.0, -1.0, 0.0
+        ];
+
+        // js 배열을 gl에서 사용할 수 있는 버퍼의 형태인 Float32Array로 변경하여 넘김, "current buffer"
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STATIC_DRAW );
+
+        // 3개의 버텍스 좌표정보 (numItems), 각각은 3개의 숫자값 (itemSize)
+        triangleVertexPositionBuffer.itemSize = 3;
+        triangleVertexPositionBuffer.numItems = 3;
+
+        // 사각형
+        squareVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, squareVertexPositionBuffer );
+        vertices = [
+            1.0, 1.0, 0.0,
+            -1.0, 1.0, 0.0,
+            1.0, -1.0, 0.0,
+            -1.0, -1.0, 0.0
+        ];
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices ), gl.STATIC_DRAW );
+        squareVertexPositionBuffer.itemSize = 3;
+        squareVertexPositionBuffer.numItems = 4;
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // 장면 그리기
+    // 인터벌 이용 화면을 갱신, 버퍼를 이용 개체를 그림
+
+    function drawScene(){
+        // viewport를 이용 gl에게 canvas의 크기를 알려줌
+        gl.viewport( 0, 0, gl.viewportWidth, gl.viewportHeight );
+        // canvas 클리어
+        gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+        // 퍼스펙티브 설정 (기본적으로 gl은 직각투영), mat4 외부 함수모듈 이용
+        mat4.perspective( 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix );
+
+        // model-view matrix 원점으로 세팅, mat4 외부 함수모듈 이용
+        mat4.identity( mvMatrix );
+
+        // 삼각형
+        // 위치이동
+        mat4.translate( mvMatrix, [-1.5, 0.0, -7.0] );
+        // gl.bindBuffer 호출 "current buffer" 할당
+        gl.bindBuffer( gl.ARRAY_BUFFER, triangleVertexPositionBuffer );
+        // gl에게 버텍스 좌표로 사용될 값 전달, "current buffer"
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute, triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0 );
+        // gl에게 현재의 model-view matrix를 사용하도록 지시시
+        setMatrixUniforms();
+        // 앞서 전달된 버텍스 배열로삼각형을 그리세요. 배열의 0번째. numItems에 위치한 요소
+        gl.drawArrays( gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems );
+
+        // 사각형
+        mat4.translate( mvMatrix, [3.0, 0.0, 0.0] );
+        gl.bindBuffer( gl.ARRAY_BUFFER, squareVertexPositionBuffer );
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0 );
+        setMatrixUniforms();
+        gl.drawArrays( gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems );
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+    // webGL 초기화
+
+    function webGLStart(){
+        var canvas = document.getElementById( "lesson01-canvas" );
+        initGL( canvas );
+        initShaders();
+        initBuffers();
+
+        gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+        gl.enable( gl.DEPTH_TEST );
+
+        drawScene();
+    }
+
+</script>
+<body onload="webGLStart();">
+<canvas id="lesson01-canvas" style="border: none;" width="500" height="500"></canvas>
+</body>
+</html>

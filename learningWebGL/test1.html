@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>test1</title>
+</head>
+<body>
+<script src="http://ssw3131.github.io/garnet/garnet.js"></script>
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<!--shader color-->
+<script id="shader-vs-color" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+
+    uniform mat4 uMatrixP;
+    uniform mat4 uMatrixMV;
+
+    void main( void ) {
+        gl_PointSize = 5.0;
+        gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
+    }
+
+
+
+</script>
+<script id="shader-fs-color" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform vec4 uColor;
+
+    void main( void ) {
+        gl_FragColor = uColor;
+    }
+
+
+
+</script>
+<!--shader texture-->
+<script id="shader-vs-texture" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uMatrixP;
+    uniform mat4 uMatrixMV;
+
+    varying vec2 vTextureCoord;
+
+    void main( void ) {
+        gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
+        vTextureCoord = aTextureCoord;
+    }
+
+
+</script>
+<script id="shader-fs-texture" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    void main(void) {
+        gl_FragColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t ) );
+    }
+
+
+</script>
+<script>
+Dk.init( function(){
+    var W = window, _doc = document, _body = _doc.body, _gl, _prg, _prgList, _bfList, _mtrP, _mtrMV;
+
+    init();
+
+    function init(){
+        initStyle();
+        _gl = initGl( initCanvas() );
+        initShader();
+        initBuffer();
+        initMatrix();
+        initTexture();
+
+        resize();
+
+        Dk.Loop.add( "draw", function(){
+            resetView();
+            drawView();
+        } );
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function initStyle(){
+        Dk.style( "body" ).st( "padding", 0, "margin", 0 );
+        Dk.style( "canvas" ).st( "outline", "1px dashed red" );
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function initCanvas( $w, $h ){
+        return Dk.dom( "canvas" ).atr( "width", $w ? $w : 800, "height", $h ? $h : 600 ).css( "margin", 50 ).tr( "addParent", _body );
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function initGl( $canvas ){
+        var gl, names = [ "moz-webgl", "webkit-3d", "experimental-webgl", "webgl" ], i = names.length;
+        while( i-- ){
+            try {
+                gl = $canvas.element.getContext( names[ i ] );
+            } catch( $e ) {}
+
+            if( gl ){
+                log( "webgl ok : " + names[ i ] );
+                break;
+            }
+        }
+
+        if( gl ){
+            gl.enable( gl.DEPTH_TEST );
+            gl.width = $canvas.atr( "width" );
+            gl.height = $canvas.atr( "height" );
+            return gl;
+        } else throw new Error( "이 브라우저에서는 WebGL은 사용이 불가능 합니다." );
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function initShader2(){
+        _prgList = {};
+
+        // color
+        _prgList.color = makeProgram( "shader-vs-color", "shader-fs-color", [ "aVertexPosition" ], [ "uMatrixP", "uMatrixMV", "uColor" ] );
+
+        // texture
+        _prgList.texture = makeProgram( "shader-vs-texture", "shader-fs-texture", [ "aVertexPosition", "aTextureCoord" ], [ "uMatrixP", "uMatrixMV", "uSampler" ] );
+
+//        _prg = _prgList.color;
+        _prg = _prgList.texture;
+        _gl.useProgram( _prg );
+    }
+
+    function initShader(){
+        _prgList = {};
+
+        var fragSd, verSd, prg, prg2,  i, aArr, aStr, uArr, uStr;
+
+        // color
+        verSd = getShader( "shader-vs-color" );
+        fragSd = getShader( "shader-fs-color" );
+
+        prg = _gl.createProgram();
+        _gl.attachShader( prg, verSd );
+        _gl.attachShader( prg, fragSd );
+        _gl.linkProgram( prg );
+
+        if( !_gl.getProgramParameter( prg, _gl.LINK_STATUS ) )
+            throw new Error( "Could not initialise shaders" );
+
+        aArr = [ "aVertexPosition" ];
+        i = aArr.length;
+        while( i-- ){
+            aStr = aArr[ i ];
+            prg[ aStr ] = _gl.getAttribLocation( prg, aStr );
+            _gl.enableVertexAttribArray( prg[ aStr ] );
+        }
+
+        uArr = [ "uMatrixP", "uMatrixMV", "uColor" ];
+        i = uArr.length;
+        while( i-- ){
+            uStr = uArr[ i ];
+            prg[ uStr ] = _gl.getUniformLocation( prg, uStr );
+        }
+
+        _prgList.color = prg;
+
+        // texture
+        verSd = getShader( "shader-vs-texture" );
+        fragSd = getShader( "shader-fs-texture" );
+
+        prg2 = _gl.createProgram();
+        _gl.attachShader( prg2, verSd );
+        _gl.attachShader( prg2, fragSd );
+        _gl.linkProgram( prg2 );
+
+        if( !_gl.getProgramParameter( prg2, _gl.LINK_STATUS ) )
+            throw new Error( "Could not initialise shaders" );
+
+        aArr = [ "aVertexPosition", "aTextureCoord" ];
+        i = aArr.length;
+        while( i-- ){
+            aStr = aArr[ i ];
+            prg2[ aStr ] = _gl.getAttribLocation( prg2, aStr );
+            _gl.enableVertexAttribArray( prg2[ aStr ] );
+        }
+
+        uArr = [ "uMatrixP", "uMatrixMV", "uSampler" ];
+        i = uArr.length;
+        while( i-- ){
+            uStr = uArr[ i ];
+            prg2[ uStr ] = _gl.getUniformLocation( prg2, uStr );
+        }
+
+        _prgList.texture = prg2;
+
+        _prg = _prgList.color;
+//        _prg = _prgList.texture;
+        _gl.useProgram( _prg );
+    }
+
+    function makeProgram( $vs, $fs, $aArr, $uArr ){
+        var fragSd, verSd, prg, i, aStr, uStr;
+        verSd = getShader( $vs );
+        fragSd = getShader( $fs );
+
+        prg = _gl.createProgram();
+        _gl.attachShader( prg, verSd );
+        _gl.attachShader( prg, fragSd );
+        _gl.linkProgram( prg );
+
+        if( !_gl.getProgramParameter( prg, _gl.LINK_STATUS ) )
+            throw new Error( "Could not initialise shaders" );
+
+        i = $aArr.length;
+        while( i-- ){
+            aStr = $aArr[ i ];
+            prg[ aStr ] = _gl.getAttribLocation( prg, aStr );
+            _gl.enableVertexAttribArray( prg[ aStr ] );
+        }
+
+        i = $uArr.length;
+        while( i-- ){
+            uStr = $uArr[ i ];
+            prg[ uStr ] = _gl.getUniformLocation( prg, uStr );
+        }
+
+        return prg;
+    }
+
+    function getShader( $id ){
+        var sdScrt, str = "", node, shader;
+        sdScrt = document.getElementById( $id );
+        if( !sdScrt ) return null;
+
+        node = sdScrt.firstChild;
+        while( node ){
+            node.nodeType == 3 ? str += node.textContent : null, node = node.nextSibling;
+        }
+
+        if( sdScrt.type == "x-shader/x-fragment" )
+            shader = _gl.createShader( _gl.FRAGMENT_SHADER );
+        else if( sdScrt.type == "x-shader/x-vertex" )
+            shader = _gl.createShader( _gl.VERTEX_SHADER );
+        else
+            return null;
+
+        _gl.shaderSource( shader, str );
+        _gl.compileShader( shader );
+
+        if( !_gl.getShaderParameter( shader, _gl.COMPILE_STATUS ) ){
+            throw new Error( _gl.getShaderInfoLog( shader ) );
+            return null;
+        }
+
+        return shader;
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function initBuffer(){
+        _bfList = {};
+
+        (function(){
+            var posBf, posBfData, idxBf, idxBfData, textureBf, textureBfData;
+            // posBf
+            posBf = _gl.createBuffer();
+            _gl.bindBuffer( _gl.ARRAY_BUFFER, posBf );
+            posBfData = [
+                -1.0, -1.0, 0.0,
+                1.0, -1.0, 0.0,
+                1.0, 1.0, 0.0,
+                -1.0, 1.0, 0.0
+            ];
+            _gl.bufferData( _gl.ARRAY_BUFFER, new Float32Array( posBfData ), _gl.STATIC_DRAW );
+            posBf.itemSize = 3;
+            posBf.numItems = 4;
+
+            // idxBf
+            idxBf = _gl.createBuffer();
+            _gl.bindBuffer( _gl.ELEMENT_ARRAY_BUFFER, idxBf );
+            idxBfData = [
+                0, 1, 2, 0, 2, 3
+            ];
+            _gl.bufferData( _gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( idxBfData ), _gl.STATIC_DRAW );
+            idxBf.itemSize = 1;
+            idxBf.numItems = 6;
+
+            // textureBf
+            textureBf = _gl.createBuffer();
+            _gl.bindBuffer( _gl.ARRAY_BUFFER, textureBf );
+            textureBfData = [
+                0.0, 0.0,
+                1.0, 0.0,
+                1.0, 1.0,
+                0.0, 1.0
+            ];
+            _gl.bufferData( _gl.ARRAY_BUFFER, new Float32Array( textureBfData ), _gl.STATIC_DRAW );
+            textureBf.itemSize = 2;
+            textureBf.numItems = 4;
+
+            _bfList.box = { posBf : posBf, idxBf : idxBf, textureBf : textureBf };
+        })();
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function initMatrix(){
+        _mtrP = mat4.create();
+        _mtrMV = mat4.create();
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    var neheTexture;
+
+    function initTexture(){
+        var img;
+        neheTexture = _gl.createTexture();
+        img = Dk.dom( "img" ).ev( "onload", function(){
+            handleLoadedTexture( neheTexture )
+        } ).atr( "src", "nehe.gif" );
+        neheTexture.image = img.element;
+    }
+
+    function handleLoadedTexture( $texture ){
+        _gl.bindTexture( _gl.TEXTURE_2D, $texture );
+        _gl.pixelStorei( _gl.UNPACK_FLIP_Y_WEBGL, true );
+        _gl.texImage2D( _gl.TEXTURE_2D, 0, _gl.RGBA, _gl.RGBA, _gl.UNSIGNED_BYTE, $texture.image );
+        _gl.texParameteri( _gl.TEXTURE_2D, _gl.TEXTURE_MAG_FILTER, _gl.NEAREST );
+        _gl.texParameteri( _gl.TEXTURE_2D, _gl.TEXTURE_MIN_FILTER, _gl.NEAREST );
+        _gl.bindTexture( _gl.TEXTURE_2D, null );
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
+
+    function resize(){
+        mat4.perspective( 45, _gl.width / _gl.height, 0.1, 1000.0, _mtrP );
+        _gl.viewport( 0, 0, _gl.width, _gl.height );
+        _gl.uniformMatrix4fv( _prg.uMatrixP, false, _mtrP );
+    }
+
+    function resetView(){
+        _gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+        _gl.clear( _gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT );
+        _gl.enable( _gl.BLEND );
+        _gl.blendFunc( _gl.SRC_ALPHA, _gl.ONE_MINUS_SRC_ALPHA );
+        mat4.identity( _mtrMV );
+    }
+
+    var xRot = 0;
+    var yRot = 0;
+    var zRot = 0;
+
+    function degToRad( degrees ){
+        return degrees * Math.PI / 180;
+    }
+
+    function drawView(){
+        var elapsed = 10;
+        xRot += (90 * elapsed) / 1000.0;
+        yRot += (90 * elapsed) / 1000.0;
+        zRot += (90 * elapsed) / 1000.0;
+
+        mat4.translate( _mtrMV, [ 0.0, 0.0, -10.0 ] );
+
+        mat4.rotate( _mtrMV, degToRad( xRot ), [ 1, 0, 0 ] );
+        mat4.rotate( _mtrMV, degToRad( yRot ), [ 0, 1, 0 ] );
+        mat4.rotate( _mtrMV, degToRad( zRot ), [ 0, 0, 1 ] );
+
+        // pos
+        _gl.bindBuffer( _gl.ARRAY_BUFFER, _bfList.box.posBf );
+        _gl.vertexAttribPointer( _prg.aVertexPosition, _bfList.box.posBf.itemSize, _gl.FLOAT, false, 0, 0 );
+
+        // idx
+        _gl.bindBuffer( _gl.ELEMENT_ARRAY_BUFFER, _bfList.box.idxBf );
+
+        // color
+        _gl.uniform4fv( _prg.uColor, [ 1.0, 0.5, 1.0, 0.5 ] );
+
+        // texture
+//        _gl.bindBuffer( _gl.ARRAY_BUFFER, _bfList.box.textureBf );
+//        _gl.vertexAttribPointer( _prg.aTextureCoord, _bfList.box.textureBf.itemSize, _gl.FLOAT, false, 0, 0 );
+//        _gl.activeTexture( _gl.TEXTURE0 );
+//        _gl.bindTexture( _gl.TEXTURE_2D, neheTexture );
+//        _gl.uniform1i( _prg.samplerUniform, 0 );
+
+        // uMatrixMV
+        _gl.uniformMatrix4fv( _prg.uMatrixMV, false, _mtrMV );
+
+        // draw
+        _gl.drawElements( _gl.TRIANGLES, _bfList.box.idxBf.numItems, _gl.UNSIGNED_SHORT, 0 );
+    }
+} )
+</script>
+</body>
+</html>
