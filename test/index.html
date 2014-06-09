@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dk webgl test</title>
+    <meta name="keywords" content="Dk moonstone"/>
+    <meta name="description" content="Dk moonstone"/>
+    <meta charset="utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+    <meta name="viewport"
+          content="width=device-width,user-scalable=no,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,target-densitydpi=medium-dpi"/>
+    <style>
+        * {
+        /*outline: 1px dashed red;*/
+        }
+        body {
+            margin: 0px;
+            padding: 0px;
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+<body>
+<canvas id="dikii" width=1200, height=700>
+</canvas>
+<script src="http://toji.github.io/gl-matrix/dist/gl-matrix-min.js"></script>
+<script src="http://ssw3131.github.io/garnet/stats.min.js"></script>
+<script src="http://ssw3131.github.io/garnet/garnet.js"></script>
+<script src="http://ssw3131.github.io/moonstone/moonstone.js"></script>
+<!--<script src="moonstone.js"></script>-->
+<script>
+    DkGl.init( "dikii", "shader.html", function(){
+        log( "DkGl init complete" );
+        var canvas = DkGl.canvas, mesh, i = 300, meshArr = [], material, material2;
+
+        DkGl.bg( "#000000" );
+
+        while( i-- ){
+            material = DkGl.material().pp( "color", Dk.util.randomColorHex(), "alpha", Math.random() );
+            material2 = DkGl.material( "texture" ).pp( "diffuse", "nehe.gif" );
+            mesh = DkGl.mesh( "rect" ).pp( "x", i * 3, "y", i * 1, "z", -10, "material", material ).tr( "addParent", canvas );
+            DkGl.mesh( "rect" ).pp( "x", 2, "y", -2, "z", 0, "material", material2 ).tr( "addParent", mesh )
+                    .tr( "addChild", DkGl.mesh( "rect" ).pp( "x", 2, "y", -2, "z", 0, "material", material ) );
+            meshArr[ i ] = mesh;
+        }
+
+        var angleX = 0;
+        var angleY = 0;
+        var angleZ = 0;
+        var rangeX = 0.13;
+        var rangeY = -0.02;
+        var rangeZ = 0.1;
+        var speedX = .03;
+        var speedY = .03;
+        var speedZ = .03;
+        var mathSin = Math.sin;
+        var mathCos = Math.cos;
+
+        DkGl.Loop.add( "loop", function(){
+            var list = DkGl.children;
+            var i = list.length;
+            while( i-- ){
+                var box = list[ i ];
+                var x = mathSin( angleX + i / 10 ) * rangeX * i;
+                var y = mathCos( angleY + i / 10 ) * rangeY * i + i * -0.1 + 30;
+                var z = mathCos( angleZ + i / 10 ) * rangeZ * i - 70;
+                box.pp( "x", x, "y", y, "z", z );
+            }
+            angleX += speedX;
+            angleY += speedY;
+            angleZ += speedZ;
+
+        } )
+    } )
+</script>
+</body>
+</html>

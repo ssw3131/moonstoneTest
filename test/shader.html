@@ -1,0 +1,48 @@
+<!--shader color-->
+<script id="shader-vs-color" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+
+    uniform mat4 uMatrixP;
+    uniform mat4 uMatrixMV;
+
+    void main( void ) {
+        gl_PointSize = 5.0;
+        gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
+    }
+</script>
+<script id="shader-fs-color" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform vec3 uColor;
+    uniform float uAlpha;
+
+    void main( void ) {
+        gl_FragColor = vec4( uColor, uAlpha );
+    }
+</script>
+<!--shader texture-->
+<script id="shader-vs-texture" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+
+    uniform mat4 uMatrixP;
+    uniform mat4 uMatrixMV;
+
+    varying vec2 vTextureCoord;
+
+    void main( void ) {
+        gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
+        vTextureCoord = aTextureCoord;
+    }
+</script>
+<script id="shader-fs-texture" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    void main(void) {
+        gl_FragColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t ) );
+    }
+</script>
