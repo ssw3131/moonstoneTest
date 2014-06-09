@@ -64,8 +64,8 @@
             while( i-- ){
                 var box = list[ i ];
                 var x = mathSin( angleX + i / 10 ) * rangeX * i;
-                var y = mathCos( angleY + i / 10 ) * rangeY * i + i * -0.1 + 30;
-                var z = mathCos( angleZ + i / 10 ) * rangeZ * i - 70;
+                var y = mathCos( angleY + i / 10 ) * rangeY * i + i * -0.1 + 25;
+                var z = mathCos( angleZ + i / 10 ) * rangeZ * i - 50;
                 box.pp( "x", x, "y", y, "z", z );
             }
             angleX += speedX;
