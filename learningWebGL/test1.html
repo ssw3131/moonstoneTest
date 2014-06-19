@@ -18,6 +18,7 @@
         gl_PointSize = 5.0;
         gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
     }
+
 </script>
 <script id="shader-fs-color" type="x-shader/x-fragment">
     precision mediump float;
@@ -27,6 +28,7 @@
     void main( void ) {
         gl_FragColor = uColor;
     }
+
 </script>
 <!--shader texture-->
 <script id="shader-vs-texture" type="x-shader/x-vertex">
@@ -42,6 +44,7 @@
         gl_Position = uMatrixP * uMatrixMV * vec4( aVertexPosition, 1.0 );
         vTextureCoord = aTextureCoord;
     }
+
 </script>
 <script id="shader-fs-texture" type="x-shader/x-fragment">
     precision mediump float;
@@ -53,10 +56,11 @@
     void main(void) {
         gl_FragColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t ) );
     }
+
 </script>
 <script>
 Dk.init( function(){
-    var W = window, _doc = document, _body = _doc.body, _gl, _prg, _prgList, _bfList, _mtrP, _mtrMV;
+    var W = window, _doc = document, _body = _doc.body, _gl, _prg, _prgList, _bfList
 
     init();
 
@@ -115,13 +119,22 @@ Dk.init( function(){
     //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
     function initShader(){
+        var p;
         _prgList = {};
 
         // color
-        _prgList.color = makeProgram( "shader-vs-color", "shader-fs-color", [ "aVertexPosition" ], [ "uMatrixP", "uMatrixMV", "uColor" ] );
+        p = makeProgram( "shader-vs-color", "shader-fs-color", [ "aVertexPosition" ], [ "uMatrixP", "uMatrixMV", "uColor" ] );
+        p.aVertexPosition = _gl.getAttribLocation( p, "aVertexPosition" );
+        _gl.enableVertexAttribArray( p.aVertexPosition );
+        _prgList.color = p;
 
         // texture
-        _prgList.texture = makeProgram( "shader-vs-texture", "shader-fs-texture", [ "aVertexPosition", "aTextureCoord" ], [ "uMatrixP", "uMatrixMV", "uSampler" ] );
+        p = makeProgram( "shader-vs-texture", "shader-fs-texture", [ "aVertexPosition", "aTextureCoord" ], [ "uMatrixP", "uMatrixMV", "uSampler" ] );
+        p.aVertexPosition = _gl.getAttribLocation( p, "aVertexPosition" );
+        _gl.enableVertexAttribArray( p.aVertexPosition );
+        p.aTextureCoord = _gl.getAttribLocation( p, "aTextureCoord" );
+        _gl.enableVertexAttribArray( p.aTextureCoord );
+        _prgList.texture = p;
 
 //        _prg = _prgList.color;
         _prg = _prgList.texture;
@@ -143,9 +156,9 @@ Dk.init( function(){
 
         i = $aArr.length;
         while( i-- ){
-            aStr = $aArr[ i ];
-            prg[ aStr ] = _gl.getAttribLocation( prg, aStr );
-            _gl.enableVertexAttribArray( prg[ aStr ] );
+//            aStr = $aArr[ i ];
+//            prg[ aStr ] = _gl.getAttribLocation( prg, aStr );
+//            _gl.enableVertexAttribArray( prg[ aStr ] );
         }
 
         i = $uArr.length;
