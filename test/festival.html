@@ -20,7 +20,6 @@
         body {
             margin: 0px;
             padding: 0px;
-            /*background-color: #222;*/
         }
     </style>
 </head>
@@ -31,16 +30,16 @@
 <script src="http://ssw3131.github.io/moonstone/moonstone.js"></script>
 <script>
     DkGl.init( "dikii", "shader.html", function(){
-        var canvas = DkGl.canvas, i = 400, boxArr = [], size = 50, material, sprite;
+        var canvas = DkGl.canvas, i = 400, boxArr = [], size = 50, material;
         while( i-- ){
             material = DkGl.material().data( "hex", DkGl.util.randomHex() );
-            sprite = DkGl.sprite().data( "width", size, "height", size, "material", material ).tr( "addParent", canvas );
+            boxArr[ i ] =  DkGl.sprite().data( "width", size, "height", size, "material", material ).tr( "addParent", canvas );
         }
 
         DkGl.bg( "#000000" );
 
-        var sw = 0;
-        var sh = 0;
+        var sw = 360;
+        var sh = 640;
         var angleX = 0;
         var angleY = 0;
         var centerX = sw / 2 - 50;
@@ -51,6 +50,19 @@
         var yspeed = .03;
         var mathSin = Math.sin;
         var mathCos = Math.cos;
+
+        DkGl.util.loop.add( "loop", function(){
+            var i = boxArr.length;
+
+            while(i--){
+                var x = centerX + mathSin( angleX + i / 10 ) * rangeX * i;
+                var y = centerY + mathCos( angleY + i / 10 ) * rangeY * i;
+                boxArr[ i ].data( "x", x, "y", y );
+            }
+
+            angleX += xspeed;
+            angleY += yspeed;
+        })
     } )
 </script>
 </body>
