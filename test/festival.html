@@ -30,7 +30,7 @@
 <script src="http://ssw3131.github.io/moonstone/moonstone.js"></script>
 <script>
     DkGl.init( "dikii", "shader.html", function(){
-        var canvas = DkGl.canvas, i = 1000, boxArr = [], size = 10, material;
+        var canvas = DkGl.canvas, i = 400, boxArr = [], size = 50, material;
         while( i-- ){
             material = DkGl.material().data( "hex", DkGl.util.randomHex() );
             boxArr[ i ] =  DkGl.sprite().data( "width", size, "height", size, "material", material ).tr( "addParent", canvas );
