@@ -19,17 +19,39 @@
 
         body {
             margin: 0px;
-            padding: 0px
+            padding: 0px;
+            /*background-color: #222;*/
         }
     </style>
 </head>
 <body>
+<canvas id="dikii" width=640, height=360 style="position: absolute">
+</canvas>
 <script src="http://ssw3131.github.io/garnet/stats.min.js"></script>
-<script src="http://ssw3131.github.io/garnet/garnet.min.js"></script>
+<script src="http://ssw3131.github.io/moonstone/moonstone.js"></script>
 <script>
-    Dk.init(function(){
+    DkGl.init( "dikii", "shader.html", function(){
+        var canvas = DkGl.canvas, i = 400, boxArr = [], size = 50, material, sprite;
+        while( i-- ){
+            material = DkGl.material().data( "hex", DkGl.util.randomHex() );
+            sprite = DkGl.sprite().data( "width", size, "height", size, "material", material ).tr( "addParent", canvas );
+        }
 
-    })
+        DkGl.bg( "#000000" );
+
+        var sw = 0;
+        var sh = 0;
+        var angleX = 0;
+        var angleY = 0;
+        var centerX = sw / 2 - 50;
+        var centerY = sh / 2 - 50;
+        var rangeX = 1;
+        var rangeY = 0.5;
+        var xspeed = .03;
+        var yspeed = .03;
+        var mathSin = Math.sin;
+        var mathCos = Math.cos;
+    } )
 </script>
 </body>
 </html>
