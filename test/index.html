@@ -26,19 +26,73 @@
 <body>
 <canvas id="dikii" width=1200, height=700 style="position: absolute">
 </canvas>
+<!--<div style="position: absolute; left:700px; top: 250px; width: 100px; height: 100px; background-color: #ffffff"></div>-->
 <script src="https://www.khronos.org/registry/webgl/sdk/debug/webgl-debug.js"></script>
-<script src="http://toji.github.io/gl-matrix/dist/gl-matrix-min.js"></script>
 <script src="http://ssw3131.github.io/garnet/stats.min.js"></script>
 <script src="http://ssw3131.github.io/garnet/dkLog.min.js"></script>
-<script src="http://ssw3131.github.io/garnet/garnet.min.js"></script>
-
-<!--<script src="http://ssw3131.github.io/moonstone/moonstone.js"></script>-->
-<script src="moonstone.js"></script>
+<!--<script src="http://ssw3131.github.io/garnet/garnet.min.js"></script>-->
+<script src="http://ssw3131.github.io/moonstone/moonstone.js"></script>
+<!--<script src="moonstone.js"></script>-->
 <script>
+    //    Dk.init( function(){
     DkGl.init( "dikii", "shader.html", function(){
         log( "DkGl init complete" );
-        DkGl.children.push( DkGl.sprite() );
+        var canvas = DkGl.canvas, sprite, sprite2, sprite3, i, leng = 1000, spriteArr = [], material, material2, material3;
+
+        DkGl.util.resize.add( "resize", function(){
+            canvas.width = 1900;
+            canvas.height = 1100;
+        } )
+
+        DkGl.bg( "#000000" );
+
+        for( i = 0; i < leng; i++ ){
+//            while( i-- ){
+            material = DkGl.material().data( "hex", DkGl.util.randomHex(), "alpha", 1 );
+            material2 = DkGl.material( "texture" ).data( "src", "nehe.gif" );
+            material3 = DkGl.material().data( "hex", DkGl.util.randomHex(), "alpha", 1 );
+//                sprite = DkGl.sprite().data( "x", 100, "y", 100, "z", 0, "width", 100, "height", 100, "material", material ).tr( "addParent", canvas );
+//                sprite2 = DkGl.sprite().data( "x", 200, "y", 200, "z", 0, "width", 100, "height", 100, "material", material2 ).tr( "addParent", canvas );
+//                sprite3 = DkGl.sprite().data( "x", 550, "y", 300, "z", 0, "width", 100, "height", 100, "material", material3 ).tr( "addParent", canvas );
+            sprite = DkGl.sprite().data( "x", 150 * i, "y", 150 * i, "z", 10 * i, "width", 100, "height", 100, "material", material ).tr( "addParent", canvas );
+//            sprite.data( "scaleX", 0.1 );
+//            sprite.data( "scaleY", 0.1 );
+//            sprite.data( "rotateZ", 5 );
+            sprite2 = DkGl.sprite().data( "x", 50, "y", 50, "z", 1, "width", 100, "height", 100, "material", material2 ).tr( "addParent", sprite );
+            sprite3 = DkGl.sprite().data( "x", 50, "y", 50, "z", 0, "width", 100, "height", 100, "material", material3 ).tr( "addParent", sprite2 );
+            spriteArr[ i ] = sprite;
+        }
+
+        var angleX = 0;
+        var angleY = 0;
+        var angleZ = 0;
+        var rangeX = 0.1;
+        var rangeY = -0.02;
+        var rangeZ = 0.1;
+        var speedX = .03;
+        var speedY = .03;
+        var speedZ = .03;
+        var mathSin = Math.sin;
+        var mathCos = Math.cos;
+
+        DkGl.util.loop.add( "loop", function(){
+            var list = spriteArr;
+            var i = spriteArr.length;
+            while( i-- ){
+                var box = list[ i ];
+                var x = mathSin( angleX + i / 10 ) * rangeX * i + 500;
+                var y = mathCos( angleY + i / 10 ) * rangeY * i + i * 0.08 + 200;
+                var z = mathCos( angleZ + i / 10 ) * rangeZ * i - 200;
+//                box.data( "x", x, "y", y, "z", z );
+//                box.data( "rotateY", box.rotateY + 1 );
+            }
+            angleX += speedX;
+            angleY += speedY;
+            angleZ += speedZ;
+
+        } )
     } )
+    //    } )
 </script>
 </body>
 </html>
